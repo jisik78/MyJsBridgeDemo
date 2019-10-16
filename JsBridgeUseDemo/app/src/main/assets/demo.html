@@ -1,0 +1,131 @@
+<html>
+	<head>
+		<meta content="text/html; charset=utf-8" http-equiv="content-type">
+		<title>
+			JSBridge
+		</title>
+	</head>
+
+	<body>
+
+		<p>
+			<input type="button" id="btn1" value="发消息给原生（默认）" onclick="btn1Click1();" />
+		</p>
+		<p>
+			<input type="button" id="btn2" value="调用原生方法" onclick="btn1Click2();" />
+		</p>
+
+		<p>
+			<xmp>1【原生 to Js （默认）】
+			</xmp>
+		</p>
+
+		<p>
+			<xmp id="na2js1">
+			</xmp>
+		</p>
+
+		<p>
+			<xmp>2【原生 to Js】
+			</xmp>
+		</p>
+		<p>
+			<xmp id="na2js2">
+			</xmp>
+		</p>
+
+		<p>
+			<xmp>3【js to 原生 （默认）】
+			</xmp>
+		</p>
+
+		<p>
+			<xmp id="back1">
+			</xmp>
+		</p>
+
+		<p>
+			<xmp>4【js to 原生】
+			</xmp>
+		</p>
+		<p>
+			<xmp id="back2">
+			</xmp>
+		</p>
+
+
+		<p>
+			<input type="file" value="" />
+		</p>
+
+
+	</body>
+	<script>
+	//https://github.com/lzyzsd/JsBridge
+		function btn1Click1() {
+			// 发消息给原生（默认）
+			var data = "我是从js发过来的默认消息";
+			window.WebViewJavascriptBridge.send(
+				data,
+				function(responseData) {
+					document.getElementById("back1").innerHTML = responseData
+				}
+			);
+
+		}
+
+
+
+		function btn1Click2() {
+			//调用原生方法
+			window.WebViewJavascriptBridge.callHandler(
+				'submitFromWeb', "我是从js传入的参数",
+				function(responseData) {
+					document.getElementById("back2").innerHTML = responseData
+				}
+			);
+		}
+
+
+
+		function connectWebViewJavascriptBridge(callback) {
+			if (window.WebViewJavascriptBridge) {
+				callback(WebViewJavascriptBridge)
+			} else {
+				document.addEventListener(
+					'WebViewJavascriptBridgeReady',
+					function() {
+						callback(WebViewJavascriptBridge)
+					},
+					false
+				);
+			}
+		}
+
+		connectWebViewJavascriptBridge(function(bridge) {
+			// 安卓调用js的默认方法
+			bridge.init(function(message, responseCallback) {
+				console.log('JS got a default message', message);
+				document.getElementById("na2js1").innerHTML = message
+
+				if (responseCallback) {
+					var data = "我是原生给js发的默认消息的返回值";
+					responseCallback(data);
+				}
+			});
+
+			//  安卓调用js方法
+			bridge.registerHandler("functionInJs", function(data, responseCallback) {
+
+				console.log('JS got a message', data);
+				document.getElementById("na2js2").innerHTML = data
+
+				if (responseCallback) {
+					var responseData = "我是安卓调用js之后，js给原生的返回值";
+					responseCallback(responseData);
+				}
+			});
+		})
+	</script>
+
+</html>
