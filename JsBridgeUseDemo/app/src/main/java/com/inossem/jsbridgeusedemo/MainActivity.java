@@ -3,13 +3,18 @@ package com.inossem.jsbridgeusedemo;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.github.lzyzsd.jsbridge.BridgeHandler;
@@ -39,6 +44,14 @@ public class MainActivity extends AppCompatActivity {
         button2 = (Button) findViewById(R.id.button2);
         button1 = (Button) findViewById(R.id.button1);
 
+//        webView.getSettings().setDefaultTextEncodingName("UTF-8");
+//        WebSettings webSettings = webView.getSettings();
+//        webSettings.setJavaScriptEnabled(true);//允许使用js
+////        webSettings.setUseWideViewPort(true);  // WebView屏幕自适应
+//        webSettings.setLoadWithOverviewMode(true);
+//        webSettings.setDomStorageEnabled(true);
+
+
         // 文件相关
         webView.setWebChromeClient(new WebChromeClient() {
 
@@ -64,7 +77,48 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
 
+            //加载进度回调
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+//                progressBar.setProgress(newProgress);
+            }
+
+
         });
+
+
+        /*  如果加上下面的代码  自己写的js交互就失效了 */
+//        webView.setWebViewClient(new WebViewClient(){
+//            @Override
+//            public void onPageFinished(WebView view, String url) {//页面加载完成
+//                progressBar.setVisibility(View.GONE);
+//                super.onPageFinished(view, url);
+//            }
+//
+//            @Override
+//            public void onPageStarted(WebView view, String url, Bitmap favicon) {//页面开始加载
+//                progressBar.setVisibility(View.VISIBLE);
+//                super.onPageStarted(view, url, favicon);
+//            }
+//
+//            @Override
+//            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+//                try {
+//                    if (!url.startsWith("http:") ||!url.startsWith("https:")) {
+//                        Intent intent = new Intent(Intent.ACTION_VIEW,
+//                                Uri.parse(url));
+//                        startActivity(intent);
+//                        return true;
+//                    }
+//                }
+//                catch (Exception e){
+//                    return false;
+//                }
+//
+//                view.loadUrl(url);
+//                return true;
+//            }
+//        });
 
 
         // -----------------      原生给js发消息方法 （默认）  两种  有回调无回调    ----------------------
@@ -116,7 +170,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-
         //  -----------------      js 调用  原生     ----------------------
         webView.registerHandler("submitFromWeb", new BridgeHandler() {
             @Override
@@ -125,7 +178,6 @@ public class MainActivity extends AppCompatActivity {
                 function.onCallBack("我是js调用原生之后，原生给js的返回值");  //  原生给 js 返回的结果
             }
         });
-
 
 
         webView.loadUrl("file:///android_asset/demo.html");
@@ -156,6 +208,34 @@ public class MainActivity extends AppCompatActivity {
                 mUploadMessageArray = null;
             }
 
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (webView != null) {
+            //释放资源
+            webView.loadDataWithBaseURL(null, "", "text/html", "utf-8", null);
+            webView.clearHistory();
+            ((ViewGroup) webView.getParent()).removeView(webView);
+
+            webView.setWebChromeClient(null);
+            webView.setWebViewClient(null);
+            webView.getSettings().setJavaScriptEnabled(false);
+            webView.clearCache(true);
+            webView.removeAllViews();
+            webView.destroy();
+
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        if (webView.canGoBack()) {
+            webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+            webView.goBack();
         }
     }
 
